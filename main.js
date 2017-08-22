@@ -1,7 +1,8 @@
 var game = new Phaser.Game(320, 480, Phaser.AUTO, 'game');
+var score = 0;
 
 // 敌人类
-function Enemy() {
+function Enemy(_game) {
   this.init = function () {
     this.enemys = game.add.group();
     this.enemys.enableBody = true;
@@ -10,6 +11,12 @@ function Enemy() {
     this.enemys.setAll('checkWorldBounds', true);
     this.enemyWidth = game.width - game.cache.getImage('enemy1').width;
     game.time.events.loop(1000, this.createEnemy, this);
+
+    this.enemyBullets = game.add.group();
+    this.enemyBullets.enableBody = true;
+    this.enemyBullets.createMultiple(100, 'enemyfire');
+    this.enemyBullets.setAll('outOfBoundsKill', true);
+    this.enemyBullets.setAll('checkWorldBounds', true);
   };
   this.createEnemy = function () {
     var en = this.enemys.getFirstExists(false);
@@ -22,7 +29,21 @@ function Enemy() {
   this.killEnemy = function (myBullet, enemy) {
     myBullet.kill();
     enemy.kill();
-  }
+    score += 10;
+    _game.updateText();
+  };
+  this.fire = function () {
+    this.enemys.forEachExists(function (en) {
+      var bullet = this.enemyBullets.getFirstExists(false);
+      if (bullet) {
+        if (game.time.now > (en.nextFireTime || 0)) {
+          bullet.reset(en.x + 25, en.y + 41);
+          bullet.body.velocity.y = 300;
+          en.nextFireTime = game.time.now + 700;
+        }
+      }
+    }, this);
+  };
 }
 
 game.States = {};
@@ -49,6 +70,7 @@ game.States.preload = function () {
     game.load.image('background', 'images/bg.jpg');
     game.load.spritesheet('myplane', 'images/myplane.png', 50, 50, 5);
     game.load.image('myfire', 'images/myfire.png');
+    game.load.image('enemyfire', 'images/enemyfire.png');
     game.load.image('enemy1', 'images/enemy1.png');
   };
   this.create = function () {
@@ -80,12 +102,17 @@ game.States.main = function () {
     this.myfires.setAll('checkWorldBounds', true);
     this.nextFireTime = 0;
 
-    this.enemy1 = new Enemy();
+    this.enemy1 = new Enemy(this);
     this.enemy1.init();
+
+    var style = {font: "16px Arial", fill: "#0ff"};
+    this.text = game.add.text(0, 0, "Score: 0", style);
   };
   this.update = function () {
     this.myFireBullet();
+    this.enemy1.fire();
 
+    game.physics.arcade.overlap(this.enemy1.enemyBullets, this.myplane, this.gameOver, null, this);
     game.physics.arcade.overlap(this.enemy1.enemys, this.myplane, this.gameOver, null, this);
     game.physics.arcade.overlap(this.enemy1.enemys, this.myfires, this.enemy1.killEnemy, null, this);
   };
@@ -102,7 +129,10 @@ game.States.main = function () {
   };
   this.gameOver = function () {
     this.myplane.kill();
-  }
+  };
+  this.updateText = function() {
+    this.text.setText("Score: " + score);
+  };
 };
 
 game.state.add('boot', game.States.boot);
