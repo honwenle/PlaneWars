@@ -17,6 +17,12 @@ function Enemy(_game) {
     this.enemyBullets.createMultiple(100, 'enemyfire');
     this.enemyBullets.setAll('outOfBoundsKill', true);
     this.enemyBullets.setAll('checkWorldBounds', true);
+
+    this.explodes = game.add.group();
+    this.explodes.createMultiple(10, 'explode1');
+    this.explodes.forEach(function (ex) {
+      ex.animations.add('explode1')
+    }, this);
   };
   this.createEnemy = function () {
     var en = this.enemys.getFirstExists(false);
@@ -29,6 +35,9 @@ function Enemy(_game) {
   this.killEnemy = function (myBullet, enemy) {
     myBullet.kill();
     enemy.kill();
+    var ex = this.explodes.getFirstExists(false);
+    ex.reset(enemy.x, enemy.y);
+    ex.play('explode1', 30, false, true);
     score += 10;
     _game.updateText();
   };
@@ -69,6 +78,7 @@ game.States.preload = function () {
     game.load.setPreloadSprite(loddingSprite);
     game.load.image('background', 'images/bg.jpg');
     game.load.spritesheet('myplane', 'images/myplane.png', 50, 50, 5);
+    game.load.spritesheet('explode1', 'images/explode1.png', 57, 41, 3);
     game.load.image('myfire', 'images/myfire.png');
     game.load.image('enemyfire', 'images/enemyfire.png');
     game.load.image('enemy1', 'images/enemy1.png');
@@ -114,7 +124,7 @@ game.States.main = function () {
 
     game.physics.arcade.overlap(this.enemy1.enemyBullets, this.myplane, this.gameOver, null, this);
     game.physics.arcade.overlap(this.enemy1.enemys, this.myplane, this.gameOver, null, this);
-    game.physics.arcade.overlap(this.enemy1.enemys, this.myfires, this.enemy1.killEnemy, null, this);
+    game.physics.arcade.overlap(this.enemy1.enemys, this.myfires, this.enemy1.killEnemy, null, this.enemy1);
   };
   // 自己发射子弹
   this.myFireBullet = function () {
@@ -129,6 +139,7 @@ game.States.main = function () {
   };
   this.gameOver = function () {
     this.myplane.kill();
+    document.title = '飞机大战 我在击落了' + (score / 10) + '架飞机';
   };
   this.updateText = function() {
     this.text.setText("Score: " + score);
