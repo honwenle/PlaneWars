@@ -29,7 +29,7 @@ function Enemy(_game) {
     if (en) {
       en.reset(game.rnd.integerInRange(0, this.enemyWidth),
         -game.cache.getImage('enemy1').height);
-        en.body.velocity.y = 100;
+      en.body.velocity.y = 100;
     }
   };
   this.killEnemy = function (myBullet, enemy) {
@@ -82,6 +82,7 @@ game.States.preload = function () {
     game.load.image('myfire', 'images/myfire.png');
     game.load.image('enemyfire', 'images/enemyfire.png');
     game.load.image('enemy1', 'images/enemy1.png');
+    game.load.image('love', 'images/love.png');
   };
   this.create = function () {
     game.state.start('main');
@@ -103,7 +104,7 @@ game.States.main = function () {
     this.myplane.body.collideWorldBounds = true;
     this.myplane.inputEnabled = true;
     this.myplane.input.enableDrag(false);
-    this.mylv = 2;
+    this.mylv = 1;
 
     this.myfires = game.add.group();
     this.myfires.enableBody = true;
@@ -118,6 +119,13 @@ game.States.main = function () {
 
     var style = {font: "16px Arial", fill: "#0ff"};
     this.text = game.add.text(0, 0, "Score: 0", style);
+
+    this.love = game.add.sprite(0, 0, 'love');
+    game.physics.arcade.enable(this.love);
+    this.love.outOfBoundsKill = true;
+    this.love.checkWorldBounds = true;
+    this.love.kill();
+    game.time.events.loop(15000, this.createLove, this.love);
   };
   this.update = function () {
     this.myFireBullet();
@@ -126,6 +134,7 @@ game.States.main = function () {
     game.physics.arcade.overlap(this.enemy1.enemyBullets, this.myplane, this.hitMe, null, this);
     game.physics.arcade.overlap(this.enemy1.enemys, this.myplane, this.hitMe, null, this);
     game.physics.arcade.overlap(this.enemy1.enemys, this.myfires, this.enemy1.killEnemy, null, this.enemy1);
+    game.physics.arcade.overlap(this.myplane, this.love, this.getLove, null, this);
   };
   // 自己发射子弹
   this.myFireBullet = function () {
@@ -135,11 +144,14 @@ game.States.main = function () {
         [this.myplane.x, this.myplane.x + this.myplane.width - this.myfireWidth],
       ];
       positionArr.push(positionArr[0].concat(positionArr[1]));
-      positionArr[this.mylv-1].forEach(function (pos) {
+      positionArr[this.mylv-1].forEach(function (pos, i) {
         var bullet = this.myfires.getFirstExists(false);
         if (bullet) {
           bullet.reset(pos, this.myplane.y - bullet.height);
           bullet.body.velocity.y = -400;
+          if (this.mylv == 3) {
+            bullet.body.velocity.x = [0, -30, 30][i];
+          }
           this.nextFireTime = game.time.now + 200;
         }
       }, this);
@@ -160,6 +172,18 @@ game.States.main = function () {
   this.updateText = function() {
     this.text.setText("Score: " + score);
   };
+
+  this.createLove = function () {
+    this.reset(game.rnd.integerInRange(0, game.width - game.cache.getImage('love').width),
+      -game.cache.getImage('love').height);
+    this.body.velocity.y = 50;
+  };
+  this.getLove = function () {
+    console.log(this.mylv)
+    this.mylv = Math.min(this.mylv + 1, 3);
+    console.log(this.mylv)
+    this.love.kill();
+  }
 };
 
 game.state.add('boot', game.States.boot);
