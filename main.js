@@ -89,7 +89,7 @@ game.States.preload = function () {
 };
 // 游戏主画面
 game.States.main = function () {
-  // 初始化引擎、背景、主角、敌人
+  // 初始化引擎、背景、主角、敌人、记分板
   this.create = function () {
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
@@ -101,9 +101,9 @@ game.States.main = function () {
     this.myplane.animations.play('fly', 12, true);
     game.physics.arcade.enable(this.myplane);
     this.myplane.body.collideWorldBounds = true;
-
     this.myplane.inputEnabled = true;
     this.myplane.input.enableDrag(false);
+    this.mylv = 2;
 
     this.myfires = game.add.group();
     this.myfires.enableBody = true;
@@ -111,6 +111,7 @@ game.States.main = function () {
     this.myfires.setAll('outOfBoundsKill', true);
     this.myfires.setAll('checkWorldBounds', true);
     this.nextFireTime = 0;
+    this.myfireWidth = game.cache.getImage('myfire').width;
 
     this.enemy1 = new Enemy(this);
     this.enemy1.init();
@@ -122,19 +123,34 @@ game.States.main = function () {
     this.myFireBullet();
     this.enemy1.fire();
 
-    game.physics.arcade.overlap(this.enemy1.enemyBullets, this.myplane, this.gameOver, null, this);
-    game.physics.arcade.overlap(this.enemy1.enemys, this.myplane, this.gameOver, null, this);
+    game.physics.arcade.overlap(this.enemy1.enemyBullets, this.myplane, this.hitMe, null, this);
+    game.physics.arcade.overlap(this.enemy1.enemys, this.myplane, this.hitMe, null, this);
     game.physics.arcade.overlap(this.enemy1.enemys, this.myfires, this.enemy1.killEnemy, null, this.enemy1);
   };
   // 自己发射子弹
   this.myFireBullet = function () {
     if (this.myplane.alive && game.time.now > this.nextFireTime) {
-      var bullet = this.myfires.getFirstExists(false);
-      if (bullet) {
-        bullet.reset(this.myplane.x + 21, this.myplane.y -13);
-        bullet.body.velocity.y = -400;
-        this.nextFireTime = game.time.now + 200;
-      }
+      var positionArr = [
+        [this.myplane.x + this.myplane.width/2 - this.myfireWidth/2],
+        [this.myplane.x, this.myplane.x + this.myplane.width - this.myfireWidth],
+      ];
+      positionArr.push(positionArr[0].concat(positionArr[1]));
+      positionArr[this.mylv-1].forEach(function (pos) {
+        var bullet = this.myfires.getFirstExists(false);
+        if (bullet) {
+          bullet.reset(pos, this.myplane.y - bullet.height);
+          bullet.body.velocity.y = -400;
+          this.nextFireTime = game.time.now + 200;
+        }
+      }, this);
+    }
+  };
+  this.hitMe = function (myplane, bullet) {
+    bullet.kill();
+    this.mylv -= 1;
+    console.log(this.mylv)
+    if (this.mylv <= 0) {
+      this.gameOver();
     }
   };
   this.gameOver = function () {
