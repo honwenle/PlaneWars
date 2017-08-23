@@ -33,26 +33,26 @@ function Enemy(config) {
       en.body.velocity.y = config['velocity'];
     }
   };
-  this.killEnemy = function (myBullet, enemy) {
-    // enemy.hp -= 1;
-    // if (enemy.hp <= 0) {
-      myBullet.kill();
+  this.killEnemy = function (enemy, myBullet) {
+    myBullet.kill();
+    enemy.hp -= 1;
+    if (enemy.hp <= 0) {
       enemy.kill();
       var ex = this.explodes.getFirstExists(false);
       ex.reset(enemy.x, enemy.y);
       ex.play('explode1', 30, false, true);
       score += config['score'];
       config['state'].updateText();
-    // }
+    }
   };
   this.fire = function () {
     this.enemys.forEachExists(function (en) {
       var bullet = this.enemyBullets.getFirstExists(false);
       if (bullet) {
         if (game.time.now > (en.nextFireTime || 0)) {
-          bullet.reset(en.x + 25, en.y + 41);
+          bullet.reset(en.x + en.width/2 - bullet.width/2, en.y + en.height);
           bullet.body.velocity.y = 300;
-          en.nextFireTime = game.time.now + 700;
+          en.nextFireTime = game.time.now + config['bulletTime'];
         }
       }
     }, this);
@@ -125,14 +125,16 @@ game.States.main = function () {
       time: 1000,
       velocity: 100,
       hp: 1,
-      score: 10
+      score: 10,
+      bulletTime: 800
     },{
       state: this,
       pic: 'enemy2',
       time: 5000,
       velocity: 50,
-      hp: 5,
-      score: 100
+      hp: 10,
+      score: 100,
+      bulletTime: 1000
     }];
     this.enemy1 = new Enemy(enemyType[0]);
     this.enemy1.init();
@@ -186,7 +188,6 @@ game.States.main = function () {
   this.hitMe = function (myplane, bullet) {
     bullet.kill();
     this.mylv -= 1;
-    console.log(this.mylv)
     if (this.mylv <= 0) {
       this.gameOver();
     }
