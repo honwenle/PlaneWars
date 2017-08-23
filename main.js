@@ -128,15 +128,15 @@ game.States.main = function () {
       velocity: 100,
       hp: 1,
       score: 10,
-      bulletTime: 800
+      bulletTime: 1000
     },{
       state: this,
       pic: 'enemy2',
-      time: 5000,
+      time: 6000,
       velocity: 50,
-      hp: 10,
+      hp: 8,
       score: 100,
-      bulletTime: 1000
+      bulletTime: 1300
     }];
     this.enemy1 = new Enemy(enemyType[0]);
     this.enemy1.init();
