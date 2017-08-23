@@ -111,7 +111,7 @@ game.States.main = function () {
     this.myplane.body.collideWorldBounds = true;
     this.myplane.inputEnabled = true;
     this.myplane.input.enableDrag(false);
-    this.mylv = 1;
+    this.mylv = 2;
 
     this.myfires = game.add.group();
     this.myfires.enableBody = true;
