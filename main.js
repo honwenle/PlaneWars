@@ -1,5 +1,6 @@
 var game = new Phaser.Game(320, 480, Phaser.AUTO, 'game');
-var score = 0;
+var score = 0,
+    count = 0;
 
 // 敌人类
 function Enemy(config) {
@@ -42,6 +43,7 @@ function Enemy(config) {
       ex.reset(enemy.x, enemy.y);
       ex.play('explode1', 30, false, true);
       score += config['score'];
+      count++;
       config['state'].updateText();
     }
   };
@@ -194,7 +196,7 @@ game.States.main = function () {
   };
   this.gameOver = function () {
     this.myplane.kill();
-    document.title = '飞机大战 我在击落了' + (score / 10) + '架飞机';
+    document.title = '飞机大战 我在击落了' + count + '架飞机，得了' + score + '分';
   };
   this.updateText = function() {
     this.text.setText("Score: " + score);
