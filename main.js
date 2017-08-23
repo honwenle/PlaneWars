@@ -2,15 +2,15 @@ var game = new Phaser.Game(320, 480, Phaser.AUTO, 'game');
 var score = 0;
 
 // 敌人类
-function Enemy(_game) {
+function Enemy(config) {
   this.init = function () {
     this.enemys = game.add.group();
     this.enemys.enableBody = true;
-    this.enemys.createMultiple(10, 'enemy1');
+    this.enemys.createMultiple(10, config['pic']);
     this.enemys.setAll('outOfBoundsKill', true);
     this.enemys.setAll('checkWorldBounds', true);
-    this.enemyWidth = game.width - game.cache.getImage('enemy1').width;
-    game.time.events.loop(1000, this.createEnemy, this);
+    this.enemyWidth = game.width - game.cache.getImage(config['pic']).width;
+    game.time.events.loop(config['time'], this.createEnemy, this);
 
     this.enemyBullets = game.add.group();
     this.enemyBullets.enableBody = true;
@@ -28,18 +28,22 @@ function Enemy(_game) {
     var en = this.enemys.getFirstExists(false);
     if (en) {
       en.reset(game.rnd.integerInRange(0, this.enemyWidth),
-        -game.cache.getImage('enemy1').height);
-      en.body.velocity.y = 100;
+        -game.cache.getImage(config['pic']).height);
+      en.hp = config.hp;
+      en.body.velocity.y = config['velocity'];
     }
   };
   this.killEnemy = function (myBullet, enemy) {
-    myBullet.kill();
-    enemy.kill();
-    var ex = this.explodes.getFirstExists(false);
-    ex.reset(enemy.x, enemy.y);
-    ex.play('explode1', 30, false, true);
-    score += 10;
-    _game.updateText();
+    // enemy.hp -= 1;
+    // if (enemy.hp <= 0) {
+      myBullet.kill();
+      enemy.kill();
+      var ex = this.explodes.getFirstExists(false);
+      ex.reset(enemy.x, enemy.y);
+      ex.play('explode1', 30, false, true);
+      score += config['score'];
+      config['state'].updateText();
+    // }
   };
   this.fire = function () {
     this.enemys.forEachExists(function (en) {
@@ -82,6 +86,7 @@ game.States.preload = function () {
     game.load.image('myfire', 'images/myfire.png');
     game.load.image('enemyfire', 'images/enemyfire.png');
     game.load.image('enemy1', 'images/enemy1.png');
+    game.load.image('enemy2', 'images/enemy2.png');
     game.load.image('love', 'images/love.png');
   };
   this.create = function () {
@@ -114,8 +119,25 @@ game.States.main = function () {
     this.nextFireTime = 0;
     this.myfireWidth = game.cache.getImage('myfire').width;
 
-    this.enemy1 = new Enemy(this);
+    var enemyType = [{
+      state: this,
+      pic: 'enemy1',
+      time: 1000,
+      velocity: 100,
+      hp: 1,
+      score: 10
+    },{
+      state: this,
+      pic: 'enemy2',
+      time: 5000,
+      velocity: 50,
+      hp: 5,
+      score: 100
+    }];
+    this.enemy1 = new Enemy(enemyType[0]);
     this.enemy1.init();
+    this.enemy2 = new Enemy(enemyType[1]);
+    this.enemy2.init();
 
     var style = {font: "16px Arial", fill: "#0ff"};
     this.text = game.add.text(0, 0, "Score: 0", style);
@@ -130,10 +152,14 @@ game.States.main = function () {
   this.update = function () {
     this.myFireBullet();
     this.enemy1.fire();
+    this.enemy2.fire();
 
     game.physics.arcade.overlap(this.enemy1.enemyBullets, this.myplane, this.hitMe, null, this);
+    game.physics.arcade.overlap(this.enemy2.enemyBullets, this.myplane, this.hitMe, null, this);
     game.physics.arcade.overlap(this.enemy1.enemys, this.myplane, this.hitMe, null, this);
+    game.physics.arcade.overlap(this.enemy2.enemys, this.myplane, this.hitMe, null, this);
     game.physics.arcade.overlap(this.enemy1.enemys, this.myfires, this.enemy1.killEnemy, null, this.enemy1);
+    game.physics.arcade.overlap(this.enemy2.enemys, this.myfires, this.enemy2.killEnemy, null, this.enemy2);
     game.physics.arcade.overlap(this.myplane, this.love, this.getLove, null, this);
   };
   // 自己发射子弹
@@ -179,9 +205,7 @@ game.States.main = function () {
     this.body.velocity.y = 50;
   };
   this.getLove = function () {
-    console.log(this.mylv)
     this.mylv = Math.min(this.mylv + 1, 3);
-    console.log(this.mylv)
     this.love.kill();
   }
 };
